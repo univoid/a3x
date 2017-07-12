@@ -6,8 +6,8 @@ from chalice import BadRequestError
 from chalice import ChaliceViewError
 from chalice import Chalice
 
-app = Chalice(app_name='freko')
-
+app = Chalice(app_name='a3x')
+app.debug = True
 REGION = 'us-east-1'
 
 BUCKET = 'freko-001'
@@ -29,13 +29,16 @@ def face():
     ## delete temp file
     close_image_file(image_file)
     ## detect faces
-    res = detect_faces(file_basename)
+    # res = detect_faces(file_basename)
+    # return {'respone': file_basename}
+    res = rec_c(file_basename)
+    return {'respone':res}
     return convert_detect_faces_response(res)
+
 
 def parse_request(req):
     file_name = must_get_value(req, 'name')
     img_data = decode_base64(must_get_value(req, 'base64'))
-    # img_data = must_get_value(req, 'base64')
     return file_name, img_data
 
 def must_get_value(req, key):
@@ -95,26 +98,20 @@ def close_image_file(image_file):
     except Exception as ex:
         raise ChaliceViewError("file is not closable. error = " + ex.message)
 
-def detect_faces(name):
-    try:
-        response = REKOGNITION.detect_faces(
-            Image={
-                'S3Object': {
-                    'Bucket': BUCKET,
-                    'Name': name,
-                }
-            },
-            Attributes=[
-                'DEFAULT',
-            ]
-        )
-        return response
-    except Exception as ex:
-        raise ChaliceViewError("fail to detect faces. error = " + ex.message)
+def rec_c(name):
+    # try:
+        # return name
+    response = REKOGNITION.recognize_celebrities(
+        Image={
+            'S3Object': {
+                'Bucket': BUCKET,
+                'Name': name,
+            }
+        }
+    )
+    return response
+    # except Exception as ex:
+    #     raise ChaliceViewError("fail to detect faces. error = " + str(type(ex))) 
 
 def convert_detect_faces_response(res):
-    exists_face = True
-    face_details = res["FaceDetails"]
-    if len(face_details) == 0:
-        exists_face = False
-    return {'exists': exists_face, 'response':res}
+    return {'response':res}
