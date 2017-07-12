@@ -2,6 +2,8 @@ import os
 import base64
 import botocore
 import boto3
+import json
+import urllib
 from chalice import BadRequestError
 from chalice import ChaliceViewError
 from chalice import Chalice
@@ -32,8 +34,7 @@ def face():
     # res = detect_faces(file_basename)
     # return {'respone': file_basename}
     res = rec_c(file_basename)
-    return {'respone':res}
-    return convert_detect_faces_response(res)
+    return search_response(res)
 
 
 def parse_request(req):
@@ -113,5 +114,29 @@ def rec_c(name):
     # except Exception as ex:
     #     raise ChaliceViewError("fail to detect faces. error = " + str(type(ex))) 
 
-def convert_detect_faces_response(res):
-    return {'response':res}
+def search_response(res):
+    # read name of the person in the picture from JSON
+    ans = {}
+    json_dict = res
+    name = json_dict["CelebrityFaces"][0]["Name"]
+    ans['Name'] = name
+    # search with google custom search API
+    api_key = 'AIzaSyB8aEOTYwqX2UT6GE_2a1LDjVc4b_nymI0'
+    search_engine_ID = '013044299581177508447:irovpa3a1yo'
+    tbm = 'nws'
+    url = 'https://www.googleapis.com/customsearch/v1'
+
+    params = {
+            'key': api_key,
+            'cx': search_engine_ID,
+            'tbm': tbm,
+            'q': name.encode('utf-8')
+            }
+    data = urllib.parse.urlencode(params)
+    full_url = url + '?' + data
+    response = urllib.request.urlopen(full_url)
+    result = json.load(response)
+    ans['news'] = []
+    for item in result['items']:
+        ans['news'].append((item['title'], item['link']))
+    return ans 
