@@ -2,16 +2,15 @@ import os
 import base64
 import botocore
 import boto3
-
 from chalice import BadRequestError
 from chalice import ChaliceViewError
 from chalice import Chalice
 
 app = Chalice(app_name='freko')
 
-REGION = 'eu-west-1'
+REGION = 'us-east-1'
 
-BUCKET = 'freko-default'
+BUCKET = 'freko-001'
 S3 = boto3.resource('s3')
 
 REKOGNITION = boto3.client('rekognition')
@@ -19,7 +18,7 @@ REKOGNITION = boto3.client('rekognition')
 @app.route('/face', methods=['POST'], content_types=['application/json'], api_key_required=True)
 def face():
     req = app.current_request.json_body
-    ## parse request to prepare file
+    # parse request to prepare file
     file_basename, img_data = parse_request(req)
     ## create temp file
     image_file = open_image_file(file_basename, img_data)
@@ -36,6 +35,7 @@ def face():
 def parse_request(req):
     file_name = must_get_value(req, 'name')
     img_data = decode_base64(must_get_value(req, 'base64'))
+    # img_data = must_get_value(req, 'base64')
     return file_name, img_data
 
 def must_get_value(req, key):
@@ -49,9 +49,9 @@ def decode_base64(data):
         missing_padding = len(data) % 4
         if missing_padding != 0:
             data += b'='* (4 - missing_padding)
-        return base64.decodestring(data)
+        return base64.b64decode(data)
     except Exception:
-        raise BadRequestError("bese64 is not decodable")
+        raise BadRequestError("base64 is not decodable")
 
 def open_image_file(name, data):
     try:
